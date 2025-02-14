@@ -1,6 +1,6 @@
 import uuid
 
-RENDER_SCALE_FACTOR = 1
+RENDER_SCALE_FACTOR = 0.85
 
 def get_default_sim_id() -> str:
     try:
@@ -15,7 +15,7 @@ def get_default_sim_id() -> str:
 class Config:
 
     sim_id = get_default_sim_id()
-    target_fps = 60
+    target_fps = 50
 
     render_resolution = (1280*RENDER_SCALE_FACTOR, 720*RENDER_SCALE_FACTOR)
     output_resolution = (1280, 720)

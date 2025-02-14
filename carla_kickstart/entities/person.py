@@ -32,7 +32,7 @@ class Person:
         self.last_location = None
 
     def _prepare_blueprint(self):
-        available_actors = get_actor_blueprints(self.world, ACTOR_FILTER, ACTOR_GENERATION)
+        available_actors = get_actor_blueprints(self.world, ACTOR_FILTER)
         blueprint = next(filter(lambda x: x.id == self.model_id, available_actors))
         blueprint.set_attribute('role_name', self.actor_role_name)
         if blueprint.has_attribute('color'):
