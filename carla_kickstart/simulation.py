@@ -11,7 +11,7 @@ from carla_kickstart.camera import CameraManager
 from carla_kickstart.config import config
 from carla_kickstart.scenarios.base import SimulationScenario
 from carla_kickstart.scenarios.base import SimulationScenario
-from carla_kickstart.config import SIM_ID
+from carla_kickstart.config import config
 
 class DriveApp(object):
 
@@ -45,7 +45,7 @@ class DriveApp(object):
     def run(self, scenario: SimulationScenario):
         self.sim_root = SimulationRoot(self.sim_world, self.hud, self.synchronous, scenario)
 
-        display = pygame.display.set_mode( window_size, pygame.HWSURFACE | pygame.DOUBLEBUF)
+        display = pygame.display.set_mode(config.window_size, pygame.HWSURFACE | pygame.DOUBLEBUF)
         display.fill((0,0,0))
         pygame.display.flip()
 

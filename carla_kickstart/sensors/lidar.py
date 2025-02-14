@@ -1,7 +1,7 @@
 import carla
 import weakref
 import numpy as np
-from carla_kickstart.config import RENDER_RESOLUTION, SIMULATION_FPS
+from carla_kickstart.config import config
 import pygame
 
 
@@ -24,7 +24,7 @@ class LidarSensor(object):
         lidar_bp.set_attribute('channels', '64')
         lidar_bp.set_attribute('points_per_second', '250000')
 
-        lidar_bp.set_attribute('rotation_frequency', str(SIMULATION_FPS))
+        lidar_bp.set_attribute('rotation_frequency', str(config.target_fps))
         lidar_bp.set_attribute("sensor_tick", str(1.0 / 4.0))
 
         transform = carla.Transform(carla.Location(x=0, z=1.8))

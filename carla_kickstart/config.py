@@ -15,7 +15,7 @@ def get_default_sim_id() -> str:
 class Config:
 
     sim_id = get_default_sim_id()
-    target_fps = 30
+    target_fps = 60
 
     render_resolution = (1280*RENDER_SCALE_FACTOR, 720*RENDER_SCALE_FACTOR)
     output_resolution = (1280, 720)
@@ -23,4 +23,4 @@ class Config:
 
 
 config = Config()
-available_car_models = ['vehicle.mercedes.coupe_2020', 'vehicle.ford.crown', 'vehicle.mercedes.sprinter', 'vehicle.mini.cooper_s_2021', 'vehicle.nissan.patrol_2021', 'vehicle.volkswagen.t2_2021']
+available_car_models = ["vehicle.dodgecop.charger", "vehicle.mini.cooper", "vehicle.taxi.ford"]

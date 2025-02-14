@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from carla_kickstart.vehicle import Vehicle
+from carla_kickstart.entities.vehicle import Vehicle
 import pygame
 from carla_kickstart.input import KeyboardState
 

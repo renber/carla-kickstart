@@ -2,7 +2,7 @@ import carla
 import weakref
 import numpy as np
 from matplotlib import cm
-from carla_kickstart.config import RENDER_RESOLUTION
+from carla_kickstart.config import config
 from carla_kickstart.sensors.object_detection import ObjectDetectionSensor
 import pygame
 from threading import Thread

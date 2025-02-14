@@ -3,7 +3,7 @@ from carla import ColorConverter
 import weakref
 import pygame
 import numpy as np
-from carla_kickstart.config import RENDER_RESOLUTION, OUTPUT_RESOLUTION
+from carla_kickstart.config import config
 
 class CameraManager(object):
 
@@ -65,8 +65,8 @@ class CameraManager(object):
                 self.target_height = hud.dim[1]
                 #bp.set_attribute('image_size_x', str(hud.dim[0]))
                 #bp.set_attribute('image_size_y', str(hud.dim[1]))
-                bp.set_attribute('image_size_x', str(RENDER_RESOLUTION[0]))
-                bp.set_attribute('image_size_y', str(RENDER_RESOLUTION[1]))
+                bp.set_attribute('image_size_x', str(config.render_resolution[0]))
+                bp.set_attribute('image_size_y', str(config.render_resolution[1]))
                 if bp.has_attribute('gamma'):
                     bp.set_attribute('gamma', str(gamma_correction))
                 for attr_name, attr_value in item[3].items():
@@ -122,8 +122,8 @@ class CameraManager(object):
     def render(self, display):
         if self.surface is not None:
             target_rect = self.surface.get_rect()
-            if target_rect.width != OUTPUT_RESOLUTION[0] or target_rect.height != OUTPUT_RESOLUTION[1]:
-                target_texture = pygame.transform.smoothscale(self.surface, OUTPUT_RESOLUTION)
+            if target_rect.width != config.output_resolution[0] or target_rect.height != config.output_resolution[1]:
+                target_texture = pygame.transform.smoothscale(self.surface, config.output_resolution)
             else:
                 target_texture = self.surface
             display.blit(target_texture, (0, 0))
