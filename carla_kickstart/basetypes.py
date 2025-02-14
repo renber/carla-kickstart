@@ -3,11 +3,11 @@ from abc import ABC, abstractmethod
 class VehicleEngine(ABC):
 
     @abstractmethod
-    def accelerate(self, amount = 0.01):
+    def accelerate(self, amount: float = 0.01):
         pass
 
     @abstractmethod
-    def brake(self, amount = 0.2):
+    def brake(self, amount: float = 0.2):
         pass
 
     @abstractmethod
@@ -19,19 +19,19 @@ class VehicleEngine(ABC):
         pass
 
     @abstractmethod
-    def steerLeft(self, steer_increment):
+    def steerLeft(self):
         pass
 
     @abstractmethod
-    def steerRight(self, steer_increment):
+    def steerRight(self):
         pass
 
     @abstractmethod
-    def steer(self, amount):
+    def steer(self, amount: float):
         pass
 
     @abstractmethod
-    def is_reverse(self):
+    def is_reverse(self) -> bool:
         pass
 
     @abstractmethod

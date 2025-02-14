@@ -54,6 +54,9 @@ class DefaultEngineModel(VehicleEngine):
         self._control.steer = 0
         self._control.hand_brake = True
 
+    def is_accelerating(self) -> bool:
+        return self._control.throttle > 0.001
+
     def idle(self):
         '''
         Neither accelerate nor brake
@@ -76,7 +79,7 @@ class DefaultEngineModel(VehicleEngine):
         self._control.steer = amount
         return amount
 
-    def is_reverse(self):
+    def is_reverse(self) -> bool:
         return self._control.reverse
 
     def toggle_reverse(self):
@@ -160,6 +163,10 @@ class Vehicle:
     def speed(self):
         v = self.player.get_velocity()
         return 3.6 * math.sqrt(v.x**2 + v.y**2 + v.z**2)
+
+    @property
+    def location(self) -> carla.Location:
+        return self.player.get_location()
 
     def spawn(self):
         # Get a random blueprint.

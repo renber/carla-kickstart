@@ -18,10 +18,16 @@ class KeyboardState:
     def reset_pressed_keys(self):
         self.pressed_keys.clear()
 
-    def is_key_down(self, key):
+    def is_key_down(self, key: int):
+        """
+        Use the pygame.K_* values for key
+        """
         return key in self.down_keys
 
-    def was_key_pressed(self, key):
+    def was_key_pressed(self, key: int):
+        """
+        Use the pygame.K_* values for key
+        """
         return key in self.pressed_keys
 
 class SystemInputController(object):

@@ -1,6 +1,6 @@
 import uuid
 
-RENDER_SCALE_FACTOR = 0.7
+RENDER_SCALE_FACTOR = 1
 
 def get_default_sim_id() -> str:
     try:
@@ -23,4 +23,4 @@ class Config:
 
 
 config = Config()
-available_car_models = ["vehicle.dodgecop.charger", "vehicle.mini.cooper", "vehicle.taxi.ford"]
+available_car_models = ['vehicle.mercedes.coupe_2020', 'vehicle.ford.crown', 'vehicle.mercedes.sprinter', 'vehicle.mini.cooper_s_2021', 'vehicle.nissan.patrol_2021', 'vehicle.volkswagen.t2_2021']

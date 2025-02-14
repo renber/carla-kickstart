@@ -11,13 +11,32 @@ class ManualDrivingBehavior(ActorBehavior):
     """
 
     def update(self, clock: pygame.time.Clock, keyboard_state: KeyboardState):
-        if keyboard_state.is_key_down(pygame.K_SPACE):
-            self.vehicle.set_light(VehicleLight.Brake, True)
-        else:
-            self.vehicle.set_light(VehicleLight.Brake, False)
+        is_braking = False
 
-        self.engine.idle()
-        self.engine.steer(0)
+        if keyboard_state.is_key_down(pygame.K_SPACE):
+            self.engine.brake()
+            is_braking = True
+        elif keyboard_state.is_key_down(pygame.K_w) and self.vehicle.speed < 30:
+            if self.engine.is_reverse():
+                self.engine.toggle_reverse()
+            self.engine.accelerate()
+        elif keyboard_state.is_key_down(pygame.K_s):
+            if not self.engine.is_reverse():
+                self.engine.toggle_reverse()
+            self.engine.accelerate()
+        else:
+            self.engine.idle()
+
+        if keyboard_state.is_key_down(pygame.K_a):
+            self.engine.steerLeft()
+        elif keyboard_state.is_key_down(pygame.K_d):
+            self.engine.steerRight()
+        else:
+            self.engine.steer(0)
+
+        # light control
+        self.vehicle.set_light(VehicleLight.Reverse, self.engine.is_reverse())
+        self.vehicle.set_light(VehicleLight.Brake, is_braking)
 
 class ManualWalkBehavior(ActorBehavior):
 
