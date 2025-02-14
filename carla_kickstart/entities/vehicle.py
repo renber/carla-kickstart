@@ -1,26 +1,13 @@
 import math
 import random
 import carla
-from carla_kickstart.basetypes import VehicleEngine
+from carla_kickstart.entities.base import VehicleEngine, VehicleLight, VehicleBase
 from carla_kickstart.carla_utils import get_actor_blueprints, get_actor_display_name
 from carla_kickstart.config import config
 from carla_kickstart.behaviors.base import ActorBehavior
 from enum import Enum
 
 ACTOR_FILTER = 'vehicle.*'
-
-class VehicleLight(Enum):
-    Position = carla.VehicleLightState.Position
-    LowBeam = carla.VehicleLightState.LowBeam
-    HighBeam = carla.VehicleLightState.HighBeam
-    Brake = carla.VehicleLightState.Brake
-    RightBlinker = carla.VehicleLightState.RightBlinker
-    LeftBlinker = carla.VehicleLightState.LeftBlinker
-    Reverse = carla.VehicleLightState.Reverse
-    Fog = carla.VehicleLightState.Fog
-    Interior = carla.VehicleLightState.Interior
-    Special1 = carla.VehicleLightState.Special1
-    Special2 = carla.VehicleLightState.Special2
 
 class DefaultEngineModel(VehicleEngine):
 
@@ -114,7 +101,7 @@ class DefaultEngineModel(VehicleEngine):
 
         self.ego.player.apply_control(self._control)
 
-class Vehicle:
+class Vehicle(VehicleBase):
 
     def __init__(self, world, model_id: str, spawn_point, behavior: ActorBehavior):
         self.world = world

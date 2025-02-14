@@ -1,7 +1,8 @@
 import pygame
 from carla_kickstart.input import KeyboardState
+from carla_kickstart.entities.base import VehicleBase
 from abc import ABC, abstractmethod
-from carla_kickstart.basetypes import VehicleEngine
+from carla_kickstart.entities.base import VehicleEngine
 
 class ActorBehavior(ABC):
 
@@ -9,11 +10,15 @@ class ActorBehavior(ABC):
         pass
 
     def attach(self, vehicle):
-        self.vehicle = vehicle
+        self.__vehicle = vehicle
+
+    @property
+    def vehicle(self) -> VehicleBase:
+        return self.__vehicle
 
     @property
     def engine(self) -> VehicleEngine:
-        return self.vehicle.engine
+        return self.__vehicle.engine
 
     def detach(self):
         pass

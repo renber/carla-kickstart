@@ -4,7 +4,7 @@ import pygame
 import carla
 from agents.navigation.basic_agent import BasicAgent
 from agents.navigation.behavior_agent import BehaviorAgent
-from carla_kickstart.basetypes import VehicleEngine
+from carla_kickstart.entities.base import VehicleEngine
 from carla_kickstart.behaviors.base import ActorBehavior
 from carla_kickstart.entities.vehicle import VehicleLight
 from carla_kickstart.input import KeyboardState

@@ -1,7 +1,7 @@
 import math
 import random
 import carla
-from carla_kickstart.basetypes import VehicleEngine
+from carla_kickstart.entities.base import VehicleEngine
 from carla_kickstart.carla_utils import get_actor_blueprints, get_actor_display_name
 from carla_kickstart.config import config
 from carla_kickstart.behaviors.base import ActorBehavior
