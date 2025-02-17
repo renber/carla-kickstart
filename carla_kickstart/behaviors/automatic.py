@@ -26,7 +26,6 @@ class FollowPredefinedRouteBehavior(ActorBehavior):
 
         self.last_waypoint_distance = None
 
-        self.time_to_continue = 0
         self.wait_for_continue = False
 
     def __load_waypoints(self, filename: str) -> deque:
@@ -52,6 +51,8 @@ class FollowPredefinedRouteBehavior(ActorBehavior):
         elif waypoint.state_name in ("AfterZebra", "AfterJunction"):
             self.vehicle.set_light(VehicleLight.RightBlinker, False)
 
+        self.wait_for_continue = True
+
     def attach(self, vehicle):
         ActorBehavior.attach(self, vehicle)
         vehicle.engine = AgentEngineControl()
@@ -67,15 +68,10 @@ class FollowPredefinedRouteBehavior(ActorBehavior):
     def has_reached_current_waypoint(self) -> bool:
         if self.current_waypoint is not None:
             dist = self.vehicle.location.distance(self.current_waypoint.location)
-            last_dist = self.last_waypoint_distance
             self.last_waypoint_distance = dist
 
-            if dist < 1:
+            if dist < 0.25:
                 return True
-
-            # we have passed the waypoint without actually reaching it
-            #if last_dist is not None and dist > last_dist:
-            #    return True
 
         return False
 
@@ -105,9 +101,18 @@ class FollowPredefinedRouteBehavior(ActorBehavior):
                     self.set_next_waypoint(self.waypoints.pop())
 
             # let the agent control the vehicle
-            control = self.agent.run_step()
-            control.manual_gear_shift = False
-            self.vehicle.player.apply_control(control)
+            if self.wait_for_continue:
+                self.vehicle.set_light(VehicleLight.Brake, True)
+                self.wait_for_continue = not keyboard_state.was_key_pressed(pygame.K_g)
+                brake_control = carla.VehicleControl()
+                brake_control.brake = 5
+                self.vehicle.player.apply_control(brake_control)
+                if not self.wait_for_continue:
+                    self.vehicle.set_light(VehicleLight.Brake, False)
+            else:
+                control = self.agent.run_step()
+                control.manual_gear_shift = False
+                self.vehicle.player.apply_control(control)
 
 class AgentEngineControl(VehicleEngine):
     """
