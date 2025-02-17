@@ -15,7 +15,7 @@ if __name__ == "__main__":
         app = DriveApp()
         app.connect(HOST, PORT, synchronous=True)
 
-        #behaviors = CompoundBehavior(FollowPredefinedRouteBehavior("scenario.csv"), RouteRecorderBehavior("recorded_route.csv")) # FollowPredefinedRouteBehavior("scenario.csv")
+        #behaviors = CompoundBehavior(ManualDrivingBehavior(), RouteRecorderBehavior("recorded_route.csv")) # FollowPredefinedRouteBehavior("scenario.csv")
         #scenario = SingleEgoVehicleScenario(behaviors, initial_spawn_point=55)
         scenario = DemoScenario()
 

@@ -1,8 +1,9 @@
 import carla
 import pygame
 from carla_kickstart.behaviors.automatic import FollowPredefinedRouteBehavior
+from carla_kickstart.behaviors.routing import RouteRecorderBehavior
 from carla_kickstart.scenarios.base import SimulationScenario
-from carla_kickstart.behaviors.base import ActorBehavior, NullBehavior
+from carla_kickstart.behaviors.base import ActorBehavior, CompoundBehavior, NullBehavior
 from carla_kickstart.behaviors.manual import ManualDrivingBehavior, ManualWalkBehavior
 from carla_kickstart.behaviors.autonomous import AutopilotDrivingBehavior
 from carla_kickstart.entities.base import VehicleLight
@@ -107,7 +108,8 @@ class DemoScenario(SimulationScenario):
          """
          #return self.get_crossing_person()
          #return self.get_passing_car()
-         return EgoVehicle(self.sim_id, self.world, EGO_MODEL, self.get_ego_spawn_point(), FollowPredefinedRouteBehavior("scenario.csv"))
+         behavior = CompoundBehavior(RouteRecorderBehavior("recorded.csv"), FollowPredefinedRouteBehavior("scenario.csv"))
+         return EgoVehicle(self.sim_id, self.world, EGO_MODEL, self.get_ego_spawn_point(), behavior)
 
     def update(self, clock: pygame.time.Clock, keyboard_state: KeyboardState):
         super().update(clock, keyboard_state)

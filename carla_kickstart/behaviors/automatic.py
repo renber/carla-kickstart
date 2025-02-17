@@ -11,8 +11,8 @@ from collections import deque
 
 class RouteWaypoint:
 
-    def __init__(self, destination, target_speed: float, state_name: str):
-        self.destination = destination
+    def __init__(self, location, target_speed: float, state_name: str):
+        self.location = location
         self.target_speed = target_speed
         self.state_name = state_name
 
@@ -23,6 +23,9 @@ class FollowPredefinedRouteBehavior(ActorBehavior):
         self.ended = False
         self.waypoints = self.__load_waypoints(filename)
         self.current_waypoint = None
+
+        self.last_waypoint_distance = None
+
         self.time_to_continue = 0
         self.wait_for_continue = False
 
@@ -37,31 +40,44 @@ class FollowPredefinedRouteBehavior(ActorBehavior):
                 state = row["State"]
                 lst.append(RouteWaypoint(loc, speed, state))
 
+        self.final_waypoint = lst[-1]
+
         lst.reverse() # reverse so that we can use as stack
         return deque(lst)
 
-    def __can_continue(self, keyboard_state: KeyboardState) -> bool:
-        return keyboard_state.was_key_pressed(pygame.K_p)
-
-    def on_state_entered(self, state_name: str):
-        print(f"Current State = {state_name}")
-
-    def on_state_ended(self, state_name: str):
-        if state_name == "BeforeZebra":
+    def on_waypoint_reached(self, waypoint: RouteWaypoint):
+        print(f"Reached {waypoint.state_name}")
+        if waypoint.state_name in ("BeforeZebra", "BeforeJunction"):
             self.vehicle.set_light(VehicleLight.RightBlinker, True)
-        elif state_name == "StopSign":
+        elif waypoint.state_name in ("AfterZebra", "AfterJunction"):
             self.vehicle.set_light(VehicleLight.RightBlinker, False)
 
     def attach(self, vehicle):
         ActorBehavior.attach(self, vehicle)
-        vehicle.engine = OverrideEngineControl()
+        vehicle.engine = AgentEngineControl()
 
-    def set_new_waypoint(self, waypoint: RouteWaypoint):
+    def set_next_waypoint(self, waypoint: RouteWaypoint):
         self.current_waypoint = waypoint
-        self.agent.set_destination(self.current_waypoint.destination)
+        #self.agent.set_destination(self.current_waypoint.destination)
         self.agent.set_target_speed(self.current_waypoint.target_speed)
+        self.last_waypoint_distance = None
 
-        self.on_state_entered(waypoint.state_name)
+        print(f"Approaching {waypoint.state_name} ({waypoint.location})")
+
+    def has_reached_current_waypoint(self) -> bool:
+        if self.current_waypoint is not None:
+            dist = self.vehicle.location.distance(self.current_waypoint.location)
+            last_dist = self.last_waypoint_distance
+            self.last_waypoint_distance = dist
+
+            if dist < 1:
+                return True
+
+            # we have passed the waypoint without actually reaching it
+            #if last_dist is not None and dist > last_dist:
+            #    return True
+
+        return False
 
     def update(self, clock: pygame.time.Clock, keyboard_state: KeyboardState):
         if not self.ended:
@@ -71,43 +87,33 @@ class FollowPredefinedRouteBehavior(ActorBehavior):
                 self.agent.ignore_traffic_lights()
                 self.agent.ignore_stop_signs()
                 self.agent.ignore_vehicles()
-                self.set_new_waypoint(self.waypoints.pop())
-
-            if self.wait_for_continue:
-                if self.__can_continue(keyboard_state):
-                    self.wait_for_continue = False
-                    self.set_new_waypoint(self.waypoints.pop())
-                    self.vehicle.set_light(VehicleLight.Brake, False)
-                else:
-                    return # keep waiting
+                self.agent.set_destination(self.final_waypoint.location)
+                self.set_next_waypoint(self.waypoints.pop())
 
             if self.agent.done():
-                self.on_state_ended(self.current_waypoint.state_name)
+                print("AGENT DONE")
+                self.on_waypoint_reached(self.current_waypoint)
+                self.ended = True
+                self.current_waypoint = None
+                self.vehicle.set_light(VehicleLight.Brake, True)
+                return
 
-                if len(self.waypoints) == 0:
-                    self.current_waypoint = None
-                    self.vehicle.set_light(VehicleLight.Brake, True)
-                    self.ended = True
+            if self.has_reached_current_waypoint():
+                self.on_waypoint_reached(self.current_waypoint)
 
-                    return # route finished
-                else:
-                    if self.__can_continue(keyboard_state):
-                        self.set_new_waypoint(self.waypoints.pop())
-                    else:
-                        self.current_waypoint = None
-                        self.wait_for_continue = True
-                        self.vehicle.set_light(VehicleLight.Brake, True)
+                if len(self.waypoints) > 0:
+                    self.set_next_waypoint(self.waypoints.pop())
 
             # let the agent control the vehicle
-            if self.current_waypoint is not None:
-                control = self.agent.run_step()
-                control.manual_gear_shift = False
-                self.vehicle.player.apply_control(control)
+            control = self.agent.run_step()
+            control.manual_gear_shift = False
+            self.vehicle.player.apply_control(control)
 
-class OverrideEngineControl(VehicleEngine):
+class AgentEngineControl(VehicleEngine):
     """
     An engine model which ignores all commands
-    as the vehicle is controlled autonomously
+    as the vehicle is controlled by an external agent
+    However, taken actions will be forwarded as hints to the agent
     """
 
     def accelerate(self, amount: float = 0.01):
