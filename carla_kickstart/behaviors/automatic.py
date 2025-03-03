@@ -1,3 +1,4 @@
+from typing import Callable
 import pygame
 import carla
 import csv
@@ -18,7 +19,7 @@ class RouteWaypoint:
 
 class FollowPredefinedRouteBehavior(ActorBehavior):
 
-    def __init__(self, filename: str):
+    def __init__(self, filename: str, wait_at_waypoints: bool = False, waypoint_reached_callback: Callable[[RouteWaypoint],None] = None):
         self.agent = None
         self.ended = False
         self.waypoints = self.__load_waypoints(filename)
@@ -26,7 +27,9 @@ class FollowPredefinedRouteBehavior(ActorBehavior):
 
         self.last_waypoint_distance = None
 
+        self.wait_at_waypoints = wait_at_waypoints
         self.wait_for_continue = False
+        self.on_waypoint_reached_callback = waypoint_reached_callback
 
     def __load_waypoints(self, filename: str) -> deque:
         lst = []
@@ -46,12 +49,16 @@ class FollowPredefinedRouteBehavior(ActorBehavior):
 
     def on_waypoint_reached(self, waypoint: RouteWaypoint):
         print(f"Reached {waypoint.state_name}")
+
+        if self.on_waypoint_reached is not None:
+            self.on_waypoint_reached_callback(waypoint)
+
         if waypoint.state_name in ("BeforeZebra", "BeforeJunction"):
             self.vehicle.set_light(VehicleLight.RightBlinker, True)
         elif waypoint.state_name in ("AfterZebra", "AfterJunction"):
             self.vehicle.set_light(VehicleLight.RightBlinker, False)
-
-        self.wait_for_continue = True
+        
+        self.wait_for_continue = self.wait_at_waypoints
 
     def attach(self, vehicle):
         ActorBehavior.attach(self, vehicle)
@@ -100,15 +107,20 @@ class FollowPredefinedRouteBehavior(ActorBehavior):
                 if len(self.waypoints) > 0:
                     self.set_next_waypoint(self.waypoints.pop())
 
+            if self.engine.brake_requested:
+                self.wait_for_continue = True                
+
             # let the agent control the vehicle
-            if self.wait_for_continue:
-                self.vehicle.set_light(VehicleLight.Brake, True)
-                self.wait_for_continue = not keyboard_state.was_key_pressed(pygame.K_g)
-                brake_control = carla.VehicleControl()
-                brake_control.brake = 5
-                self.vehicle.player.apply_control(brake_control)
+            if self.wait_for_continue:                      
+                self.wait_for_continue = self.engine.brake_requested                    
+
                 if not self.wait_for_continue:
                     self.vehicle.set_light(VehicleLight.Brake, False)
+                else:
+                    self.vehicle.set_light(VehicleLight.Brake, True)
+                    brake_control = carla.VehicleControl()
+                    brake_control.brake = 5
+                    self.vehicle.player.apply_control(brake_control)
             else:
                 control = self.agent.run_step()
                 control.manual_gear_shift = False
@@ -121,14 +133,19 @@ class AgentEngineControl(VehicleEngine):
     However, taken actions will be forwarded as hints to the agent
     """
 
+    def __init__(self):
+        VehicleEngine.__init__(self)
+
+        self.brake_requested = False
+
     def accelerate(self, amount: float = 0.01):
-        pass
+        self.brake_requested = False
 
     def brake(self, amount: float = 0.2):
-        pass
+        self.brake_requested = True        
 
     def emergency_brake(self):
-        pass
+        self.brake_requested = True
 
     def idle(self):
         pass

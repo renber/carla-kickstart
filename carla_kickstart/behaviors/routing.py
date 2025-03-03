@@ -16,7 +16,7 @@ class RouteRecorderBehavior(ActorBehavior):
 
     def __init__(self, filename: str, record_interval_ms: int = 0):
         self.f = open(filename, "w")
-        self.f.write("Time;X;Y;Z\n")
+        self.f.write("X;Y;Z;TargetSpeed;State\n")
         self.f.flush()
 
         self.is_recording = False
@@ -47,7 +47,7 @@ class RouteRecorderBehavior(ActorBehavior):
 
         if do_record:
             loc = self.vehicle.location
-            line = f"{self.total_time};{loc.x};{loc.y};{loc.z}"
+            line = f"{loc.x};{loc.y};{loc.z};30;StateName"
             self.f.write(f"{line}\n")
             self.f.flush()
             print(line)

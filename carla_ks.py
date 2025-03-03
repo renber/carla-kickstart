@@ -7,16 +7,18 @@ from carla_kickstart.scenarios.single import SingleEgoVehicleScenario
 from carla_kickstart.behaviors.manual import ManualDrivingBehavior
 import traceback
 
-HOST = '127.0.0.1'
-PORT = 2000
+HOST = 'ce-gpu.informatik.tu-chemnitz.de' # '127.0.0.1'
+PORT = 2110 #2000
 
 if __name__ == "__main__":
     try:
         app = DriveApp()
-        app.connect(HOST, PORT, synchronous=True)
+        app.connect(HOST, PORT, synchronous=False)
 
         #behaviors = CompoundBehavior(ManualDrivingBehavior(), RouteRecorderBehavior("recorded_route.csv")) # FollowPredefinedRouteBehavior("scenario.csv")
         #scenario = SingleEgoVehicleScenario(behaviors, initial_spawn_point=55)
+        #behaviors = CompoundBehavior(FollowPredefinedRouteBehavior("scenario.csv"))
+        
         scenario = DemoScenario()
 
         app.run(scenario)

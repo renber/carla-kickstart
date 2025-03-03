@@ -1,6 +1,6 @@
 import carla
 import pygame
-from carla_kickstart.behaviors.automatic import FollowPredefinedRouteBehavior
+from carla_kickstart.behaviors.automatic import FollowPredefinedRouteBehavior, RouteWaypoint
 from carla_kickstart.behaviors.routing import RouteRecorderBehavior
 from carla_kickstart.scenarios.base import SimulationScenario
 from carla_kickstart.behaviors.base import ActorBehavior, CompoundBehavior, NullBehavior
@@ -102,13 +102,19 @@ class DemoScenario(SimulationScenario):
     def get_ego_spawn_point(self):
         return self.map.get_spawn_points()[EGO_SPAWN_POINT]
 
+    def on_waypoint_reached(self, wp: RouteWaypoint):
+        if wp.state_name == "AtCrossing":
+            # spawn other cars
+            self.signal.set()
+
     def get_ego_vehicle(self) -> Vehicle:
          """
          Return the ego vehicle at its initial spawn point
          """
          #return self.get_crossing_person()
          #return self.get_passing_car()
-         behavior = CompoundBehavior(RouteRecorderBehavior("recorded.csv"), FollowPredefinedRouteBehavior("scenario.csv"))
+         # RouteRecorderBehavior("recorded.csv")
+         behavior = CompoundBehavior(FollowPredefinedRouteBehavior("scenario.csv", waypoint_reached_callback=self.on_waypoint_reached), ManualDrivingBehavior())
          return EgoVehicle(self.sim_id, self.world, EGO_MODEL, self.get_ego_spawn_point(), behavior)
 
     def update(self, clock: pygame.time.Clock, keyboard_state: KeyboardState):
@@ -160,14 +166,11 @@ class PassingCarBehavior(ActorBehavior):
         self.signal = signal
 
     def attach(self, vehicle):
-        ActorBehavior.attach(self, vehicle)
-        self.elapsed = 0
+        ActorBehavior.attach(self, vehicle)        
 
     def update(self, clock: pygame.time.Clock, keyboard_state: KeyboardState):
-        self.elapsed += clock.get_time()
-
         if self.signal.is_on:
-            if self.vehicle.travelled_distance > 65:
+            if self.vehicle.travelled_distance > 80:
                 self.engine.emergency_brake()
                 self.vehicle.set_light(VehicleLight.Brake, True)
                 self.vehicle.set_light(VehicleLight.LeftBlinker, True)
