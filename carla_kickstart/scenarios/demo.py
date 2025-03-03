@@ -59,9 +59,7 @@ class DemoScenario(SimulationScenario):
     A scenario where a leading vehicle spawns in front of the ego vehicle
     """
 
-    # the distance at which the leading vehicle should be spawned
-    leading_spawn_distance = 10
-    crossing_person = None
+    # the distance at which the leading vehicle should be spawned        
     signal = Signal()
 
     def __init__(self):

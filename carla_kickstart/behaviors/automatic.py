@@ -53,9 +53,9 @@ class FollowPredefinedRouteBehavior(ActorBehavior):
         if self.on_waypoint_reached is not None:
             self.on_waypoint_reached_callback(waypoint)
 
-        if waypoint.state_name in ("BeforeZebra", "BeforeJunction"):
+        if waypoint.state_name in ("BeforeZebra", "BeforeCrossing", "BeforeJunction"):
             self.vehicle.set_light(VehicleLight.RightBlinker, True)
-        elif waypoint.state_name in ("AfterZebra", "AfterJunction"):
+        elif waypoint.state_name in ("AfterZebra", "AfterCrossing", "AfterJunction"):
             self.vehicle.set_light(VehicleLight.RightBlinker, False)
         
         self.wait_for_continue = self.wait_at_waypoints
