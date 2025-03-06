@@ -103,7 +103,7 @@ class DemoScenario(SimulationScenario):
     def on_waypoint_reached(self, wp: RouteWaypoint):
         self.safety_behavior.on_situation_detected(wp.state_name, wp.intent)
 
-        if wp.state_name == "AtCrossing":
+        if wp.state_name == "AfterZebra":
             # spawn other cars
             self.signal.set()
 
@@ -111,11 +111,11 @@ class DemoScenario(SimulationScenario):
          """
          Return the ego vehicle at its initial spawn point
          """
-         #return self.get_crossing_person()
          #return self.get_passing_car()
+         #return self.get_crossing_person()
          # RouteRecorderBehavior("recorded.csv")
          self.safety_behavior = DrivingSafetyBehavior()
-         behavior = CompoundBehavior(FollowPredefinedRouteBehavior("scenario.csv", waypoint_reached_callback=self.on_waypoint_reached), self.safety_behavior)
+         behavior = CompoundBehavior(FollowPredefinedRouteBehavior(filename="scenario.csv", driver_behavior="cautious", waypoint_reached_callback=self.on_waypoint_reached), self.safety_behavior)
          return EgoVehicle(self.sim_id, self.world, EGO_MODEL, self.get_ego_spawn_point(), behavior)
 
     def update(self, clock: pygame.time.Clock, keyboard_state: KeyboardState):
@@ -163,21 +163,25 @@ class PassingCarBehavior(ActorBehavior):
 
     elapsed = 0
 
-    def __init__(self, signal: Signal):
+    def __init__(self, signal: Signal, delay_ms: int = 0):
         self.signal = signal
+        self.started = False
+        self.delay_ms = delay_ms
+
+        dest = carla.Location(-5.83, 66.24, 0.00)
+        self.__inner_behavior = FollowPredefinedRouteBehavior(waypoints=[RouteWaypoint(dest, 30)])
 
     def attach(self, vehicle):
         ActorBehavior.attach(self, vehicle)
+        self.__inner_behavior.attach(self.vehicle)
 
     def update(self, clock: pygame.time.Clock, keyboard_state: KeyboardState):
-        if self.signal.is_on:
-            if self.vehicle.travelled_distance > 80:
-                self.engine.emergency_brake()
-                self.vehicle.set_light(VehicleLight.Brake, True)
-                self.vehicle.set_light(VehicleLight.LeftBlinker, True)
-                self.vehicle.set_light(VehicleLight.RightBlinker, True)
+        if not self.started:
+            self.started = self.signal.is_on
+
+        if self.started:
+
+            if self.delay_ms > 0:
+                self.delay_ms = max(0, self.delay_ms - clock.get_time())
             else:
-                if self.vehicle.speed < 30:
-                    self.engine.accelerate()
-                else:
-                    self.engine.idle()
+                self.__inner_behavior.update(clock, keyboard_state)

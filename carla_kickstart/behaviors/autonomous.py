@@ -52,8 +52,8 @@ class DrivingSafetyBehavior(ActorBehavior):
                 self.wait_before_continue = 0
 
         cam: CameraSensor = self.vehicle.get_sensor("camera_front")
-        if len(cam.detections) > 0:
-            print(cam.detections)
+        #if len(cam.detections) > 0:
+        #    print(cam.detections)
 
         stop_signs = [x for x in cam.detections if x.class_name == "stop sign"]
         if len(stop_signs) > 0:

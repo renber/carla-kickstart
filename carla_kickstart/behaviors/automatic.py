@@ -1,6 +1,6 @@
 import logging
 
-from typing import Callable
+from typing import Callable, List
 import pygame
 import carla
 import csv
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class RouteWaypoint:
 
-    def __init__(self, location, target_speed: float, state_name: str, intent: str):
+    def __init__(self, location, target_speed: float, state_name: str = "", intent: str = ""):
         self.location = location
         self.target_speed = target_speed
         self.state_name = state_name
@@ -24,10 +24,18 @@ class RouteWaypoint:
 
 class FollowPredefinedRouteBehavior(ActorBehavior):
 
-    def __init__(self, filename: str, wait_at_waypoints: bool = False, waypoint_reached_callback: Callable[[RouteWaypoint],None] = None):
+    def __init__(self, filename: str = None, waypoints: List[RouteWaypoint] = None, wait_at_waypoints: bool = False, driver_behavior = "normal", waypoint_reached_callback: Callable[[RouteWaypoint],None] = None):
         self.agent = None
         self.ended = False
-        self.waypoints = self.__load_waypoints(filename)
+        self.driver_behavior = driver_behavior
+        if filename is not None and waypoints is not None:
+            raise Exception("Cannot set filename and waypoints at the same time")
+
+        if filename is not None:
+            self.waypoints = self.__load_waypoints_from_file(filename)
+        else:
+            self.waypoints = self.__waypoints_from_list(waypoints)
+
         self.current_waypoint = None
 
         self.last_waypoint_distance = None
@@ -36,7 +44,7 @@ class FollowPredefinedRouteBehavior(ActorBehavior):
         self.wait_for_continue = False
         self.on_waypoint_reached_callback = waypoint_reached_callback
 
-    def __load_waypoints(self, filename: str) -> deque:
+    def __load_waypoints_from_file(self, filename: str) -> deque:
         lst = []
 
         with open(filename, "r") as f:
@@ -48,15 +56,18 @@ class FollowPredefinedRouteBehavior(ActorBehavior):
                 intent = row["Intent"]
                 lst.append(RouteWaypoint(loc, speed, state, intent))
 
-        self.final_waypoint = lst[-1]
+            return self.__waypoints_from_list(lst)
 
-        lst.reverse() # reverse so that we can use as stack
-        return deque(lst)
+    def __waypoints_from_list(self, waypoints: List[RouteWaypoint]) -> deque:
+        self.final_waypoint = waypoints[-1]
+
+        waypoints.reverse() # reverse so that we can use as stack
+        return deque(waypoints)
 
     def on_waypoint_reached(self, waypoint: RouteWaypoint):
         logger.debug(f"Reached {waypoint.state_name}")
 
-        if self.on_waypoint_reached is not None:
+        if self.on_waypoint_reached_callback is not None:
             self.on_waypoint_reached_callback(waypoint)
 
         if self.wait_at_waypoints:
@@ -79,7 +90,7 @@ class FollowPredefinedRouteBehavior(ActorBehavior):
             dist = self.vehicle.location.distance(self.current_waypoint.location)
             self.last_waypoint_distance = dist
 
-            if dist < 0.25:
+            if dist < 0.75:
                 return True
 
         return False
@@ -88,7 +99,7 @@ class FollowPredefinedRouteBehavior(ActorBehavior):
         if not self.ended:
 
             if self.agent is None:
-                self.agent = BehaviorAgent(self.vehicle.player, 'cautious')
+                self.agent = BehaviorAgent(self.vehicle.player, self.driver_behavior)
                 self.agent.ignore_traffic_lights()
                 self.agent.ignore_stop_signs()
                 self.agent.ignore_vehicles()
