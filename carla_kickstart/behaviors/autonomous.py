@@ -8,21 +8,6 @@ import csv
 
 from carla_kickstart.sensors.camera import CameraSensor
 
-class AutopilotDrivingBehavior(ActorBehavior):
-    """
-    Use Carla's AutoPilot feature to control the vehicle
-    """
-    def attach(self, vehicle):
-        super().attach(vehicle)
-        self.vehicle.player.set_autopilot(True)
-
-    def detach(self):
-        super().detach()
-        self.vehicle.player.set_autopilot(False)
-
-    def update(self, clock: pygame.time.Clock, keyboard_state: KeyboardState):
-        pass
-
 class DrivingSafetyBehavior(ActorBehavior):
 
     def __init__(self):

@@ -5,7 +5,7 @@ from carla_kickstart.behaviors.routing import RouteRecorderBehavior
 from carla_kickstart.scenarios.base import SimulationScenario
 from carla_kickstart.behaviors.base import ActorBehavior, CompoundBehavior, NullBehavior
 from carla_kickstart.behaviors.manual import ManualDrivingBehavior, ManualWalkBehavior
-from carla_kickstart.behaviors.autonomous import AutopilotDrivingBehavior, DrivingSafetyBehavior
+from carla_kickstart.behaviors.autonomous import DrivingSafetyBehavior
 from carla_kickstart.entities.base import VehicleLight
 from carla_kickstart.entities.vehicle import Vehicle
 from carla_kickstart.entities.person import Person
@@ -78,6 +78,13 @@ class DemoScenario(SimulationScenario):
         person_spawn_point = carla.Transform(location, rotation)
         return Person(self.sim_root.world, "walker.pedestrian.0047", person_spawn_point, CrossingPersonBehavior())
 
+    def get_pavement_person(self) -> Person:
+        ego_point = self.get_ego_spawn_point()
+        location = carla.Location(5, 35.5, ego_point.location.z)
+        rotation = carla.Rotation(ego_point.rotation.pitch, ego_point.rotation.yaw, ego_point.rotation.roll)
+        person_spawn_point = carla.Transform(location, rotation)
+        return Person(self.sim_root.world, "walker.pedestrian.0047", person_spawn_point, CrossingPersonBehavior())
+
     def get_passing_car(self) -> Vehicle:
         ego_point = self.get_ego_spawn_point()
         location = carla.Location(74, 66.5, ego_point.location.z)
@@ -91,8 +98,10 @@ class DemoScenario(SimulationScenario):
         self.signal.reset()
 
         if len(self.actors) == 0:
+            self.actors.append(self.get_pavement_person())
             self.actors.append(self.get_crossing_person())
             self.actors.append(self.get_passing_car())
+            # todo: more passing cars
 
         for actor in self.actors:
             actor.restart()
@@ -172,7 +181,7 @@ class PassingCarBehavior(ActorBehavior):
         self.__inner_behavior = FollowPredefinedRouteBehavior(waypoints=[RouteWaypoint(dest, 30)])
 
     def attach(self, vehicle):
-        ActorBehavior.attach(self, vehicle)
+        super().attach(vehicle)
         self.__inner_behavior.attach(self.vehicle)
 
     def update(self, clock: pygame.time.Clock, keyboard_state: KeyboardState):
