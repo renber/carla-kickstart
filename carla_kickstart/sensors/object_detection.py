@@ -1,4 +1,5 @@
 import os
+from typing import List
 
 import cv2
 import numpy as np
@@ -8,6 +9,9 @@ class DetectedObject:
     def __init__(self, rect, class_name):
         self.rect = rect
         self.class_name = class_name
+
+    def __repr__(self):
+        return f"'{self.class_name}' at ({self.rect[0]}, {self.rect[1]}) with size ({self.rect[2]}, {self.rect[3]})"
 
 class ObjectDetectionSensor():
     """
@@ -28,7 +32,7 @@ class ObjectDetectionSensor():
         self.output_layers = self.net.getUnconnectedOutLayersNames()
         self.colors = np.random.uniform(0, 255, size = (len(self.classes), 3))
 
-    def detect(self, image, image_size):
+    def detect(self, image, image_size) -> List[DetectedObject]:
         width = image_size[0]
         height = image_size[1]
 

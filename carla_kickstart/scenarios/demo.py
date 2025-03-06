@@ -5,7 +5,7 @@ from carla_kickstart.behaviors.routing import RouteRecorderBehavior
 from carla_kickstart.scenarios.base import SimulationScenario
 from carla_kickstart.behaviors.base import ActorBehavior, CompoundBehavior, NullBehavior
 from carla_kickstart.behaviors.manual import ManualDrivingBehavior, ManualWalkBehavior
-from carla_kickstart.behaviors.autonomous import AutopilotDrivingBehavior
+from carla_kickstart.behaviors.autonomous import AutopilotDrivingBehavior, DrivingSafetyBehavior
 from carla_kickstart.entities.base import VehicleLight
 from carla_kickstart.entities.vehicle import Vehicle
 from carla_kickstart.entities.person import Person
@@ -46,7 +46,7 @@ class EgoVehicle(Vehicle):
 
     def setup_default_sensors(self):
         # Set up the sensors of the ego vehicle
-        #self.attach_sensor("collision", CollisionSensor(self.player))
+        self.attach_sensor("collision", CollisionSensor(self.player))
         #self.attach_sensor("lane", LaneInvasionSensor(self.player))
         self.attach_sensor("gnss", GnssSensor(self.player))
         self.attach_sensor("imu", IMUSensor(self.player))
@@ -59,7 +59,7 @@ class DemoScenario(SimulationScenario):
     A scenario where a leading vehicle spawns in front of the ego vehicle
     """
 
-    # the distance at which the leading vehicle should be spawned        
+    # the distance at which the leading vehicle should be spawned
     signal = Signal()
 
     def __init__(self):
@@ -101,6 +101,8 @@ class DemoScenario(SimulationScenario):
         return self.map.get_spawn_points()[EGO_SPAWN_POINT]
 
     def on_waypoint_reached(self, wp: RouteWaypoint):
+        self.safety_behavior.on_situation_detected(wp.state_name, wp.intent)
+
         if wp.state_name == "AtCrossing":
             # spawn other cars
             self.signal.set()
@@ -112,7 +114,8 @@ class DemoScenario(SimulationScenario):
          #return self.get_crossing_person()
          #return self.get_passing_car()
          # RouteRecorderBehavior("recorded.csv")
-         behavior = CompoundBehavior(FollowPredefinedRouteBehavior("scenario.csv", waypoint_reached_callback=self.on_waypoint_reached), ManualDrivingBehavior())
+         self.safety_behavior = DrivingSafetyBehavior()
+         behavior = CompoundBehavior(FollowPredefinedRouteBehavior("scenario.csv", waypoint_reached_callback=self.on_waypoint_reached), self.safety_behavior)
          return EgoVehicle(self.sim_id, self.world, EGO_MODEL, self.get_ego_spawn_point(), behavior)
 
     def update(self, clock: pygame.time.Clock, keyboard_state: KeyboardState):
@@ -164,7 +167,7 @@ class PassingCarBehavior(ActorBehavior):
         self.signal = signal
 
     def attach(self, vehicle):
-        ActorBehavior.attach(self, vehicle)        
+        ActorBehavior.attach(self, vehicle)
 
     def update(self, clock: pygame.time.Clock, keyboard_state: KeyboardState):
         if self.signal.is_on:

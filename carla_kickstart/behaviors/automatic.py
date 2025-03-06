@@ -1,3 +1,5 @@
+import logging
+
 from typing import Callable
 import pygame
 import carla
@@ -10,12 +12,15 @@ from carla_kickstart.entities.vehicle import VehicleLight
 from carla_kickstart.input import KeyboardState
 from collections import deque
 
+logger = logging.getLogger(__name__)
+
 class RouteWaypoint:
 
-    def __init__(self, location, target_speed: float, state_name: str):
+    def __init__(self, location, target_speed: float, state_name: str, intent: str):
         self.location = location
         self.target_speed = target_speed
         self.state_name = state_name
+        self.intent = intent
 
 class FollowPredefinedRouteBehavior(ActorBehavior):
 
@@ -40,7 +45,8 @@ class FollowPredefinedRouteBehavior(ActorBehavior):
                 loc = carla.Location(x=float(row["X"]), y=float(row["Y"]), z=float(row["Z"]))
                 speed = float(row["TargetSpeed"])
                 state = row["State"]
-                lst.append(RouteWaypoint(loc, speed, state))
+                intent = row["Intent"]
+                lst.append(RouteWaypoint(loc, speed, state, intent))
 
         self.final_waypoint = lst[-1]
 
@@ -48,17 +54,13 @@ class FollowPredefinedRouteBehavior(ActorBehavior):
         return deque(lst)
 
     def on_waypoint_reached(self, waypoint: RouteWaypoint):
-        print(f"Reached {waypoint.state_name}")
+        logger.debug(f"Reached {waypoint.state_name}")
 
         if self.on_waypoint_reached is not None:
             self.on_waypoint_reached_callback(waypoint)
 
-        if waypoint.state_name in ("BeforeZebra", "BeforeCrossing", "BeforeJunction"):
-            self.vehicle.set_light(VehicleLight.RightBlinker, True)
-        elif waypoint.state_name in ("AfterZebra", "AfterCrossing", "AfterJunction"):
-            self.vehicle.set_light(VehicleLight.RightBlinker, False)
-        
-        self.wait_for_continue = self.wait_at_waypoints
+        if self.wait_at_waypoints:
+            self.wait_for_continue = True
 
     def attach(self, vehicle):
         ActorBehavior.attach(self, vehicle)
@@ -70,7 +72,7 @@ class FollowPredefinedRouteBehavior(ActorBehavior):
         self.agent.set_target_speed(self.current_waypoint.target_speed)
         self.last_waypoint_distance = None
 
-        print(f"Approaching {waypoint.state_name} ({waypoint.location})")
+        logger.debug(f"Approaching {waypoint.state_name} ({waypoint.location})")
 
     def has_reached_current_waypoint(self) -> bool:
         if self.current_waypoint is not None:
@@ -94,7 +96,7 @@ class FollowPredefinedRouteBehavior(ActorBehavior):
                 self.set_next_waypoint(self.waypoints.pop())
 
             if self.agent.done():
-                print("AGENT DONE")
+                logger.info("DRIVING AGENT DONE")
                 self.on_waypoint_reached(self.current_waypoint)
                 self.ended = True
                 self.current_waypoint = None
@@ -108,11 +110,11 @@ class FollowPredefinedRouteBehavior(ActorBehavior):
                     self.set_next_waypoint(self.waypoints.pop())
 
             if self.engine.brake_requested:
-                self.wait_for_continue = True                
+                self.wait_for_continue = True
 
             # let the agent control the vehicle
-            if self.wait_for_continue:                      
-                self.wait_for_continue = self.engine.brake_requested                    
+            if self.wait_for_continue:
+                self.wait_for_continue = self.engine.brake_requested
 
                 if not self.wait_for_continue:
                     self.vehicle.set_light(VehicleLight.Brake, False)
@@ -130,7 +132,7 @@ class AgentEngineControl(VehicleEngine):
     """
     An engine model which ignores all commands
     as the vehicle is controlled by an external agent
-    However, taken actions will be forwarded as hints to the agent
+    However, brake/accelerate taken actions will be forwarded as hints to the driving agent
     """
 
     def __init__(self):
@@ -142,7 +144,7 @@ class AgentEngineControl(VehicleEngine):
         self.brake_requested = False
 
     def brake(self, amount: float = 0.2):
-        self.brake_requested = True        
+        self.brake_requested = True
 
     def emergency_brake(self):
         self.brake_requested = True

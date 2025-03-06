@@ -1,9 +1,10 @@
+from typing import List
 import carla
 import weakref
 import numpy as np
 from matplotlib import cm
 from carla_kickstart.config import config
-from carla_kickstart.sensors.object_detection import ObjectDetectionSensor
+from carla_kickstart.sensors.object_detection import DetectedObject, ObjectDetectionSensor
 import pygame
 from threading import Thread
 
@@ -30,7 +31,7 @@ class CameraSensor(object):
 
         self.sensor = self.world.spawn_actor(camera_bp, transform, attach_to=parent_actor, attachment_type = carla.AttachmentType.Rigid)
 
-        self.detections = []
+        self.detections: List[DetectedObject] = []
 
         weak_self = weakref.ref(self)
 
